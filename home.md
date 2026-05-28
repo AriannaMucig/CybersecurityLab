@@ -3,7 +3,7 @@
 ## Introduction and Objectives
 
 Capture The Flag (CTF) challenges are educational security simulations where practitioners test their penetration testing skills by identifying and exploiting vulnerabilities within a target system. The ultimate goal is to capture hidden text files known as flags.
-This report documents the security assessment of the vulnerable virtual machine "Game of Thrones (GOT) 1" that includes 7 main flags and 4 extra ones. For the purpose of this demo I focused exclusively on the 7 main flags.
+This report documents the security assessment of the vulnerable virtual machine *Game of Thrones (GOT) 1* that includes 7 main flags and 4 extra ones. For the purpose of this demo I focused exclusively on the 7 main flags.
 
 ## Lab Setup
 The testing environment was virtualized and isolated using Oracle VirtualBox. It consists of two virtual machines:
@@ -22,7 +22,7 @@ The ultimate objective is achieving full system compromise (root privileges) and
 ## Attack and Kingdom Compromise Walkthrough
 ### Initial Reconnaissance and Network Scanning
 To map the network and discover the target, I first verified my Kali Linux local IP address using the `ip a` command, identifying it as `192.168.1.58/24`. Next, I performed a ping scan across the subnet to locate active hosts: `sudo nmap -sn 192.168.1.0/24`.
-The scan successfully isolated the target's IP address: 192.168.1.124. I then launched a comprehensive, aggressive Nmap scan targeting all TCP ports to enumerate active services, version banners, and potential vulnerabilities via default scripts: `sudo nmap -p- -sV -sC -A 192.168.1.124`
+The scan successfully isolated the target's IP address: 192.168.1.124. I then launched a comprehensive, aggressive Nmap scan targeting all TCP ports to enumerate active services, version banners, and potential vulnerabilities via default scripts: `sudo nmap -p- -sV -sC -A 192.168.1.124`.
 The resulting output revealed a broad attack surface, exposing FTP, SSH, HTTP, IMAP, MySQL, and PostgreSQL services.
 
 I initiated my analysis from the HTTP service (port 80). Navigating to the IP via a web browser showed only the CTF rules within the HTML source code. To discover hidden directories, I performed a directory brute-force attack using dirb: `dirb http://192.168.1.124/`.
@@ -43,18 +43,22 @@ To bypass the User-Agent restriction on `/the-tree/`, I modified Firefox's advan
 
 ### Dorne (FTP)
 
-Leveraging the credentials exfiltrated during the web reconnaissance phase, I initiated an FTP session on port 21:
-ftp 192.168.1.124
-Upon successful authentication, I retrieved the first flag. I then listed the remote directory contents using ls, revealing two files of interest: problems_in_the_north.txt and the_wall.txt.nc. I downloaded both locally using the get command before terminating the FTP session.
-Inspecting problems_in_the_north.txt via cat revealed a hashed credential format indicating a nested, salted hashing scheme: md5(md5($s).$p).
-The specific string was: nobody:6000e084bf18c302eae4559d48cb520c$2hY68a.
-I saved this hash into a text file and utilized John the Ripper, specifying the exact matching cryptographic format (dynamic_2008):
+Leveraging the credentials exfiltrated during the web reconnaissance phase, I initiated an FTP session: `ftp 192.168.1.124`.
+Upon successful authentication, I retrieved the first flag. I then listed the remote directory contents using `ls`, revealing two files: `problems_in_the_north.txt` and `the_wall.txt.nc`. I downloaded both locally using the `get` command.
+
+Inspecting `problems_in_the_north.txt` via `cat` revealed a hashed credential format indicating a nested, salted hashing scheme: `md5(md5($s).$p)`. I saved the hash into a text file and utilized John the Ripper, specifying the exact matching cryptographic format (dynamic_2008):  
+```bash
 echo 'nobody:6000e084bf18c302eae4559d48cb520c$2hY68a' > hash.txt
 john --format=dynamic_2008 hash.txt
-The tool successfully cracked the hash, returning the plaintext password: strak.
-The second file, the_wall.txt.nc, was encrypted using the Advanced Encryption Standard (AES/Rijndael) block cipher. Employing the mcrypt utility and providing the freshly cracked password as the decryption key, I unlocked the file:
+```
+
+The tool successfully cracked the hash, returning the plaintext password: stark.
+
+The second file, `the_wall.txt.nc`, was encrypted using the Advanced Encryption Standard (AES/Rijndael) block cipher. Employing the `mcrypt` utility and providing the freshly cracked password as the decryption key, I unlocked the file:
+```bash
 mcrypt -d the_wall.txt.nc
 cat the_wall.txt
+```
 The decrypted file provided explicit credentials and setup instructions for the next phase.
 
 ### The Wall and The North (HTTP)
