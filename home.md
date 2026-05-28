@@ -167,11 +167,15 @@ To remediate the vulnerabilities exploited throughout this kill chain, the syste
 ## Resources and References
 Hacking Articles: <https://www.hackingarticles.in/hack-game-thrones-vm-ctf-challenge/>
 
-Other Technical References: <https://thehackingquest.net/ctf-game-of-thrones-parte-i/
-https://thehackingquest.net/ctf-game-of-thrones-parte-ii/
-https://thehackingquest.net/ctf-game-of-thrones-parte-iii/
-https://thehackingquest.net/ctf-game-of-thrones-parte-iv/
-https://thehackingquest.net/ctf-game-of-thrones-parte-v/>
+Other Technical References: 	<https://thehackingquest.net/ctf-game-of-thrones-parte-i/>
+
+								<https://thehackingquest.net/ctf-game-of-thrones-parte-ii/>
+
+								<https://thehackingquest.net/ctf-game-of-thrones-parte-iii/>
+
+								<https://thehackingquest.net/ctf-game-of-thrones-parte-iv/>
+
+								<https://thehackingquest.net/ctf-game-of-thrones-parte-v/>
 
 
 Target Download Repository: <https://www.vulnhub.com/entry/game-of-thrones-ctf-1,201/> 
