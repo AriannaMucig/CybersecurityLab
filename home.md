@@ -1,5 +1,7 @@
 #CTF Challenge: Game of Thrones 1
+
 ##Introduction and Objectives
+
 Capture The Flag (CTF) challenges are educational security simulations where practitioners test their penetration testing skills by identifying and exploiting vulnerabilities within a target system. The ultimate goal is to "capture" hidden text files known as "flags".
 This report documents the security assessment of the vulnerable virtual machine "Game of Thrones (GOT) 1" that includes 7 main flags and 4 extra ones. For the purpose of this demo I focused exclusively on the 7 main flags.
 ##Lab Setup
