@@ -165,12 +165,17 @@ To remediate the vulnerabilities exploited throughout this kill chain, the syste
 - Modern, Strong Hashing Functions: Upgrade credential storage from legacy MD5 algorithms to contemporary, slow password-hashing schemes designed to resist hardware-accelerated (GPU) cracking attempts, such as bcrypt, Argon2, or PBKDF2.
 
 ## Resources and References
-Primary Walkthrough Guide: Hacking Articles - GOT Challenge
+Hacking Articles: <https://www.hackingarticles.in/hack-game-thrones-vm-ctf-challenge/>
 
-Technical Milestone References: The Hacking Quest Series
+Other Technical References: <https://thehackingquest.net/ctf-game-of-thrones-parte-i/
+https://thehackingquest.net/ctf-game-of-thrones-parte-ii/
+https://thehackingquest.net/ctf-game-of-thrones-parte-iii/
+https://thehackingquest.net/ctf-game-of-thrones-parte-iv/
+https://thehackingquest.net/ctf-game-of-thrones-parte-v/>
 
-Target Download Repository: VulnHub - Game of Thrones CTF 1
 
-Vulnerability Scoring Reference: NIST National Vulnerability Database
+Target Download Repository: <https://www.vulnhub.com/entry/game-of-thrones-ctf-1,201/> 
+
+Vulnerability Scoring Reference: <https://nvd.nist.gov/>
 
 
