@@ -1,3 +1,4 @@
+<div style="text-align: justify;">
 # CTF Challenge: Game of Thrones 1
 
 ## Introduction and Objectives
@@ -146,3 +147,5 @@ Primary Walkthrough Guide: Hacking Articles - GOT Challenge
 Technical Milestone References: The Hacking Quest Series
 Target Download Repository: VulnHub - Game of Thrones CTF 1
 Vulnerability Scoring Reference: NIST National Vulnerability Database
+
+</div>
