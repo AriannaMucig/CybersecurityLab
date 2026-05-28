@@ -22,24 +22,24 @@ The ultimate objective is achieving full system compromise (root privileges) and
 ## Attack and Kingdom Compromise Walkthrough
 ### Initial Reconnaissance and Network Scanning
 To map the network and discover the target, I first verified my Kali Linux local IP address using the `ip a` command, identifying it as `192.168.1.58/24`. Next, I performed a ping scan across the subnet to locate active hosts: `sudo nmap -sn 192.168.1.0/24`.
-The scan successfully isolated the target's IP address: 192.168.1.124. I then launched a comprehensive, aggressive Nmap scan targeting all TCP ports to enumerate active services, version banners, and potential vulnerabilities via default scripts:
-sudo nmap -p- -sV -sC -A 192.168.1.124
+The scan successfully isolated the target's IP address: 192.168.1.124. I then launched a comprehensive, aggressive Nmap scan targeting all TCP ports to enumerate active services, version banners, and potential vulnerabilities via default scripts: `sudo nmap -p- -sV -sC -A 192.168.1.124`
 The resulting output revealed a broad attack surface, exposing FTP, SSH, HTTP, IMAP, MySQL, and PostgreSQL services.
 
-I initiated my analysis from the HTTP service (port 80). Navigating to the IP via a web browser showed only the CTF rules within the HTML source code. 
-To discover hidden directories, I performed a directory brute-force attack using dirb:
-dirb http://192.168.1.124/
-Among the findings,I inspected the robots.txt file that highlighted three paths: /secret-island/, /direct-access-to-kings-landing/, and /the-tree/. The latter implemented a restriction based on the User-Agent string, granting access exclusively to the Three-eyed-raven browser identity.
-By browsing to /secret-island/, I uncovered a link to a CTF map that mapped each kingdom to a specific network service:
-Dorne: FTP
-The Wall & The North: HTTP
-Iron Island: DNS
-Stormlands: Webmin
-Mountain and the Vale: PostgreSQL
-The Reach: IMAP
-The Rock and King’s Landing: GitList and MySQL
-Visiting /direct-access-to-kings-landing/ yielded no immediate results.
-To bypass the User-Agent restriction on /the-tree/, I modified Firefox's advanced configuration by accessing about:config. I added a string parameter named general.useragent.override and set its value to Three-eyed-raven. By inspecting the source code of the page I harvested the username for the Dorne kingdom. Finally, by checking the path /h/i/d/d/e/n/index.php, discovered during brute-forcing, I successfully retrieved the corresponding password.
+I initiated my analysis from the HTTP service (port 80). Navigating to the IP via a web browser showed only the CTF rules within the HTML source code. To discover hidden directories, I performed a directory brute-force attack using dirb: `dirb http://192.168.1.124/`.
+
+Among the findings, I inspected the `robots.txt` file that highlighted three paths: `/secret-island/`, `/direct-access-to-kings-landing/`, and `/the-tree/`. The latter implemented a restriction based on the User-Agent string, granting access exclusively to the Three-eyed-raven browser identity.
+
+By browsing to `/secret-island/`, I uncovered a link to a CTF map that mapped each kingdom to a specific network service:
+- Dorne: FTP
+- The Wall & The North: HTTP
+- Iron Island: DNS
+- Mountain and the Vale: PostgreSQL
+- The Reach: IMAP
+- The Rock and King’s Landing: GitList and MySQL
+
+Visiting `/direct-access-to-kings-landing/` yielded no immediate results.
+
+To bypass the User-Agent restriction on `/the-tree/`, I modified Firefox's advanced configuration by accessing `about:config`. I added a string parameter named `general.useragent.override` and set its value to Three-eyed-raven. By inspecting the source code of the page I harvested the username for the Dorne kingdom. Finally, by checking the path `/h/i/d/d/e/n/index.php`, discovered during brute-forcing, I successfully retrieved the corresponding password.
 
 ### Dorne (FTP)
 
