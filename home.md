@@ -2,7 +2,7 @@
 
 ## Introduction and Objectives
 
-Capture The Flag (CTF) challenges are educational security simulations where practitioners test their penetration testing skills by identifying and exploiting vulnerabilities within a target system. The ultimate goal is to "capture" hidden text files known as "flags".
+Capture The Flag (CTF) challenges are educational security simulations where practitioners test their penetration testing skills by identifying and exploiting vulnerabilities within a target system. The ultimate goal is to capture hidden text files known as flags.
 This report documents the security assessment of the vulnerable virtual machine "Game of Thrones (GOT) 1" that includes 7 main flags and 4 extra ones. For the purpose of this demo I focused exclusively on the 7 main flags.
 
 ## Lab Setup
@@ -70,7 +70,7 @@ Within the output, I spotted a clear reference pointing to a DNS TXT record for 
 nslookup -type=TXT Timef0rconqu3rs.7Kingdoms.ctf 192.168.1.124
 The DNS server's response revealed the third flag and a new set of credentials (aryastark) designated for a service running on port 10000.
 
-## Stormlands (Webmin)
+### Stormlands (Webmin)
 Navigando to http://192.168.1.124:10000, I reached the login interface of the Webmin systems management panel. Logging in as aryastark, I identified the software version as 1.590.
 I cross-referenced this version against known public vulnerabilities using searchsploit:
 searchsploit webmin
