@@ -176,6 +176,8 @@ The database executed the query, revealing the seventh and final flag, completin
 
 ![](Screen/Screen%208.png)
 
+> Technical Note: As observable both in the terminal output above and in the video demo during the table enumeration phase, the Flag table was already present in the database schema. This behavior is an artifact from previous execution tests conducted during the lab preparation phase that could not be reverted.
+
 ## Mitigation Recommendations
 To remediate the vulnerabilities exploited throughout this kill chain, the system administrator should implement the following security hardening procedures:
 - **Patch Management**: Immediately update Webmin and GitList instances to their latest stable releases to permanently eliminate the remote code execution flaws (CVE-2012-2982 and CVE-2014-4511).
