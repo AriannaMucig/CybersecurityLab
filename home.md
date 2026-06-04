@@ -25,7 +25,7 @@ To map the network and discover the target, I first verified my Kali Linux local
 The scan successfully isolated the target's IP address: `192.168.1.124`. I then launched a comprehensive, aggressive Nmap scan targeting all TCP ports to enumerate active services, version banners, and potential vulnerabilities via default scripts: `sudo nmap -p- -sV -sC -A 192.168.1.124`.
 The resulting output revealed a broad attack surface, exposing FTP, SSH, HTTP, IMAP, MySQL, and PostgreSQL services.
 
-![](Screen/screen%201.png)
+![](Screen/screen%201)
 
 I initiated my analysis from the HTTP service (port 80). Navigating to the IP via a web browser showed only the CTF rules within the HTML source code. To discover hidden directories, I performed a directory brute-force attack using dirb: `dirb http://192.168.1.124/`.
 
