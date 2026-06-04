@@ -178,9 +178,8 @@ The database executed the query, revealing the seventh and final flag, completin
 
 ## Mitigation Recommendations
 To remediate the vulnerabilities exploited throughout this kill chain, the system administrator should implement the following security hardening procedures:
-- Strict Patch Management: Immediately update Webmin and GitList instances to their latest stable releases to permanently eliminate the remote code execution flaws (CVE-2012-2982 and CVE-2014-4511).
-- Principle of Least Privilege (Database Hardening): Revoke the FILE privilege from non-administrative database users like cerseilannister. Additionally, configure the global secure_file_priv variable in my.cnf to restrict import/export tasks to a specific, isolated folder, completely neutralizing the LOAD DATA INFILE file system attack vectors.
-- Modern, Strong Hashing Functions: Upgrade credential storage from legacy MD5 algorithms to contemporary, slow password-hashing schemes designed to resist hardware-accelerated (GPU) cracking attempts, such as bcrypt, Argon2, or PBKDF2.
+- **Patch Management**: Immediately update Webmin and GitList instances to their latest stable releases to permanently eliminate the remote code execution flaws (CVE-2012-2982 and CVE-2014-4511).
+- **Principle of Least Privilege**: Revoke the FILE privilege from non-administrative database users like cerseilannister. Additionally, restrict import/export tasks to a specific, isolated folder, neutralizing the LOAD DATA INFILE file system attack vectors.
 
 ## Resources and References
 Gemini (Google AI) was used as an educational and writing collaborator for this project. During the pre-demo phase, the AI was consulted to fully understand the purpose of certain commands. It was subsequently used to enhance the clarity and technical vocabulary of the report in English.
